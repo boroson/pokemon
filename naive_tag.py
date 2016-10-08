@@ -22,13 +22,15 @@ class NaiveTag(Solver):
             self.users[row[0]] = row[1].split('/')
 
     def tag_in_common(self, qid, uid):
-        try:
-            if self.questions[qid] in self.users[uid]:
-                return True
-        except KeyError:
-            pass
-        finally:
+        # try:
+        if len(set(self.questions[qid]) & set(self.users[uid])) > 0:
+            return True
+        else:
             return False
+        # except KeyError:
+        #     pass
+        # finally:
+        #     return False
 
     def train(self):
         common_tag = {'total': 0, 'answered': 0}
