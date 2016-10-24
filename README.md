@@ -22,3 +22,5 @@ Features already implemented:
 -number of answers
 
 -number of top quality answers
+
+-ratio of top quality answers to answers
