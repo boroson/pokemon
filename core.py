@@ -17,6 +17,7 @@ class Solver(object):
         self.users = self.load_users()
         self.questions = self.load_questions()
         self.solver = None
+        self.tag_matrix = []
 
 
     def file_iter(self, filename, delimiter='\t'):
@@ -174,6 +175,21 @@ class Solver(object):
             users.update(self._user_to_dict(row))
         return users
 
+    def _compute_tag_matrix(self, qids, uids, labels, max_qtag=19, max_utag=142):
+        '''
+        Construct tag matrix to show tag matches between question and user in answered questions
+        Question tags along rows, user tags along columns
+        '''
+
+        tagmat = np.zeros([max_qtag + 1, max_utag + 1], dtype=int)
+        for i in xrange(len(labels)):
+            if labels[i] == 1:  # If user answered the question
+                qtag_now = self.questions[qids[i]]['tag'] #[qids.index(train_qids[i])]  # Find tags of the relevant question
+                utag_now = self.users[uids[i]]['tags'] #utags[uids.index(train_uids[i])]  # Find tags of the relevant user
+                for t in utag_now:
+                    tagmat[qtag_now, t] += 1
+        return tagmat
+
     def _popularity_features(self, question, user):
         """
         Return the features that correspond to the popularity of a question.
@@ -199,6 +215,58 @@ class Solver(object):
         common_chars = set(question['characters']) & set(user['characters'])
         return len(common_chars)
 
+    def _has_n_common_words(self, question, user, nmax=5):
+        """
+        Return number of words in common between question and user description as binary feature
+
+        return {list} of 0s with 1 corresponding to number of words in common
+        """
+        num_common_words = self._number_common_words(question, user)
+        has_n_words = [0 for i in range(nmax+1)]
+        if num_common_words <= nmax:
+            has_n_words[num_common_words] = 1
+        return has_n_words
+
+    def _has_n_common_characters(self, question, user, nmax=9):
+        """
+        Return number of characters in common between question and user description as binary feature
+
+        return {list} of 0s with 1 corresponding to number of characters in common
+        """
+        num_common_chars = self._number_common_characters(question, user)
+        has_n_chars = [0 for i in range(nmax+1)]
+        if num_common_chars <= nmax:
+            has_n_chars[num_common_chars] = 1
+        return has_n_chars
+
+    def _has_n_most_popular_tags(self, question, user, tagmat, num_tags=2):
+        """
+        Return whether user has tags that most commonly answered question tag as binary feature
+
+        return {list} of 0s with 1 corresponding to popularity index of tags that users have
+        """
+        qtag = question['tag']
+        num_answers = tagmat[qtag]
+        sorted_utags = np.argsort(num_answers) # sorted list from least common to most common
+
+        has_tags = [0 for i in range(num_tags)]
+        for i in range(num_tags):
+            if sorted_utags[-1 - i] in user['tags']:
+                has_tags[i] = 1
+
+        return has_tags
+
+
+    def _percent_top_answers(self, question, user):
+        """
+        Return percentage of answers which are ranked as top answers
+        If the question has no answers, return 0 (because none are top answers)
+        """
+        if question['answers'] > 0:
+            return question['top_answers']/question['answers']
+        else:
+            return 0
+
     def feature_vector(self, question, user, binary=False, n_features=None):
         """
         Generate a feature vector for the question, user pair.
@@ -220,6 +288,12 @@ class Solver(object):
             features += self._popularity_features(question, user)
             features.append(self._number_common_words(question, user))
             features.append(self._number_common_characters(question, user))
+            features.append(self._percent_top_answers(question, user))
+
+        # binary features
+        features += (self._has_n_common_words(question, user))
+        features += (self._has_n_common_characters(question, user))
+        features += (self._has_n_most_popular_tags(question, user, self.tag_matrix))
 
         return np.array(features)
 
@@ -238,6 +312,19 @@ class Solver(object):
         """
         x = []
         y = []
+
+        # Iterate over input file once to compute anything that requires all data to make feture vectors
+        # E.g. most popular tag features
+        qids = []
+        uids = []
+        labels = []
+        for row in self.file_iter(filename):
+            qids.append(row[0])
+            uids.append(row[1])
+            labels.append(int(row[2]))
+
+        self.tag_matrix = self._compute_tag_matrix(qids, uids, labels)
+
         # Iterate over row of input file
         for row in self.file_iter(filename):
             question = self.questions[row[0]]
@@ -260,6 +347,8 @@ class Solver(object):
             question = self.questions[row[0]]
             user = self.users[row[1]]
             x.append(self.feature_vector(question, user))
+
+            # Move this
         return np.array(x)
 
     def train(self):
