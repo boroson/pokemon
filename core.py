@@ -13,11 +13,18 @@ DATADIR = 'bytecup2016data/'
 class Solver(object):
     def __init__(self, output=None):
         self.output = output if output else '%s_%s.csv' % (self.__class__.__name__, TIMESTAMP)
+
         # Load all user and question data
         self.users = self.load_users()
         self.questions = self.load_questions()
+
+        # machine learning solver (typically from skit-learn
         self.solver = None
-        self.tag_matrix = []
+
+        # Initialize tag matrix
+        max_qtags = 19
+        max_utags = 142
+        self.tag_matrix = np.zeros([max_qtags + 1, max_utags + 1], dtype=int)
 
 
     def file_iter(self, filename, delimiter='\t'):
@@ -175,20 +182,18 @@ class Solver(object):
             users.update(self._user_to_dict(row))
         return users
 
-    def _compute_tag_matrix(self, qids, uids, labels, max_qtag=19, max_utag=142):
-        '''
-        Construct tag matrix to show tag matches between question and user in answered questions
-        Question tags along rows, user tags along columns
-        '''
+    def _update_tag_matrix(self, qtag, utags, label):
+        """
+        Update tag matrix with passed in question and user tags.
 
-        tagmat = np.zeros([max_qtag + 1, max_utag + 1], dtype=int)
-        for i in xrange(len(labels)):
-            if labels[i] == 1:  # If user answered the question
-                qtag_now = self.questions[qids[i]]['tag'] #[qids.index(train_qids[i])]  # Find tags of the relevant question
-                utag_now = self.users[uids[i]]['tags'] #utags[uids.index(train_uids[i])]  # Find tags of the relevant user
-                for t in utag_now:
-                    tagmat[qtag_now, t] += 1
-        return tagmat
+        Tag matrix shows tag matches between question and user in answered questions (label = 1)
+        Question tags along rows, user tags along columns
+        """
+        if not label is 1:
+            return
+
+        for t in utags:
+            self.tag_matrix[int(qtag), int(t)] += 1
 
     def _popularity_features(self, question, user):
         """
@@ -245,7 +250,7 @@ class Solver(object):
 
         return {list} of 0s with 1 corresponding to popularity index of tags that users have
         """
-        qtag = question['tag']
+        qtag = int(question['tag'])
         num_answers = tagmat[qtag]
         sorted_utags = np.argsort(num_answers) # sorted list from least common to most common
 
@@ -312,26 +317,18 @@ class Solver(object):
         """
         x = []
         y = []
-
-        # Iterate over input file once to compute anything that requires all data to make feture vectors
-        # E.g. most popular tag features
-        qids = []
-        uids = []
-        labels = []
-        for row in self.file_iter(filename):
-            qids.append(row[0])
-            uids.append(row[1])
-            labels.append(int(row[2]))
-
-        self.tag_matrix = self._compute_tag_matrix(qids, uids, labels)
-
         # Iterate over row of input file
         for row in self.file_iter(filename):
             question = self.questions[row[0]]
             user = self.users[row[1]]
+            label = int(row[2])
+
+            self._update_tag_matrix(question['tag'], user['tags'], label)
+
             # Convert question,user pair into feature vector
             x.append(self.feature_vector(question, user))
-            y.append(int(row[2]))
+            y.append(label)
+        # convert to numpy array
         return np.array(x), np.array(y)
 
     def validation_iter(self, filename=DATADIR+'validate_nolabel.txt'):
