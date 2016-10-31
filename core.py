@@ -272,7 +272,7 @@ class Solver(object):
         else:
             return 0
 
-    def feature_vector(self, question, user, binary=False, n_features=None):
+    def feature_vector(self, question, user, binary=False, poly_expansion=True):
         """
         Generate a feature vector for the question, user pair.
 
@@ -280,8 +280,8 @@ class Solver(object):
         param {dict} user - Nested dictionary representation of user
         param {bool} binary (Optional) - If true, only binary (0,1) features are returned in the feature vector.
             Defaults to False.
-        param {number} n_features (Optional) - Number of features to return in feature vector. If None, all features
-            are returned. Defaults to None
+        param {bool} poly_expansion (optional) = If true, perform polynomial expansion on the feature vector.
+            Defaults to False
 
         return {numpy vector} Feature vector
         """
@@ -299,6 +299,9 @@ class Solver(object):
         features += (self._has_n_common_words(question, user))
         features += (self._has_n_common_characters(question, user))
         features += (self._has_n_most_popular_tags(question, user, self.tag_matrix))
+
+        if poly_expansion:
+            features = polynomial_expansion(features, powers=[2, 3, 4])
 
         return np.array(features)
 
@@ -379,3 +382,18 @@ class Solver(object):
         user = self.users[uid]
         x = self.feature_vector(question, user).reshape(1, -1)  # reshape needed to avoid sklearn warning
         return self.solver.predict(x)[0]
+
+
+def polynomial_expansion(vect, powers):
+    """
+    Expand the list vect with each element raised to each power in powers
+
+    param {numerical list} vect - list of numbers
+    param {numerical list} powers - list of exponents
+
+    return {list}
+    """
+    for i in xrange(len(vect)):
+        for p in powers:
+            vect.append(i ** p)
+    return vect
