@@ -317,18 +317,22 @@ class Solver(object):
         """
         x = []
         y = []
+
+        # Iterate over input file once to compute anything that requires all data to make feture vectors
+        # E.g. most popular tag features
+        for row in self.file_iter(filename):
+            qtag = self.questions[row[0]]['tag']
+            utags = self.users[row[1]]['tags']
+            label = int(row[2])
+            self._update_tag_matrix(qtag, utags, label)
+
         # Iterate over row of input file
         for row in self.file_iter(filename):
             question = self.questions[row[0]]
             user = self.users[row[1]]
-            label = int(row[2])
-
-            self._update_tag_matrix(question['tag'], user['tags'], label)
-
             # Convert question,user pair into feature vector
             x.append(self.feature_vector(question, user))
-            y.append(label)
-        # convert to numpy array
+            y.append(int(row[2]))
         return np.array(x), np.array(y)
 
     def validation_iter(self, filename=DATADIR+'validate_nolabel.txt'):
