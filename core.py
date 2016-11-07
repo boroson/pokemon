@@ -2,7 +2,7 @@
 
 from datetime import datetime
 import csv
-from itertools import izip
+from itertools import izip, combinations_with_replacement
 import numpy as np
 
 
@@ -244,7 +244,7 @@ class Solver(object):
             has_n_chars[num_common_chars] = 1
         return has_n_chars
 
-    def _has_n_most_popular_tags(self, question, user, tagmat, num_tags=2):
+    def _has_n_most_popular_tags(self, question, user, tagmat, num_tags=5):
         """
         Return whether user has tags that most commonly answered question tag as binary feature
 
@@ -301,7 +301,7 @@ class Solver(object):
         features += (self._has_n_most_popular_tags(question, user, self.tag_matrix))
 
         if poly_expansion:
-            features = polynomial_expansion(features, powers=[2, 3, 4])
+            features = polynomial_expansion(features)
 
         return np.array(features)
 
@@ -384,7 +384,7 @@ class Solver(object):
         return self.solver.predict(x)[0]
 
 
-def polynomial_expansion(vect, powers):
+def polynomial_expansion(vect):
     """
     Expand the list vect with each element raised to each power in powers
 
@@ -393,7 +393,6 @@ def polynomial_expansion(vect, powers):
 
     return {list}
     """
-    for i in xrange(len(vect)):
-        for p in powers:
-            vect.append(i ** p)
+    for xi, xj in combinations_with_replacement(vect, 2):
+        vect.append(xi * xj)
     return vect
