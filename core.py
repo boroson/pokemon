@@ -396,3 +396,8 @@ def polynomial_expansion(vect):
     for xi, xj in combinations_with_replacement(vect, 2):
         vect.append(xi * xj)
     return vect
+
+
+def all_nan(x):
+    return not(False in np.isnan(x))
+
