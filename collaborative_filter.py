@@ -52,7 +52,11 @@ class CollabFilter(Solver):
         for qid, uid, label in self.file_iter(DATADIR + 'invited_info_train.txt'):
             uindex = self.u_index[uid]
             qindex = self.q_index[qid]
-            self.R_mat[uindex, qindex] = float(label)
+            # Scale to [-1,1]
+            if int(label) == 0:
+                self.R_mat[uindex, qindex] = -1.0
+            else:
+                self.R_mat[uindex, qindex] = 1.0
 
     def compute_means(self):
         """
@@ -104,6 +108,34 @@ class CollabFilter(Solver):
             return 0.0
         return np.dot(ri, rj) / (normi * normj)
 
+    def pearson_corr(self, i, j):
+        """
+        Computes the Pearson correlation between uid1 and uid2
+        """
+        # Find elements rated by both users
+        qi_ind = np.nonzero(np.isfinite(self.R_mat[i]))
+        qj_ind = np.nonzero(np.isfinite(self.R_mat[j]))
+        common_qs = np.intersect1d(qi_ind, qj_ind)
+        if common_qs.size == 0:
+            # users are not correlated
+            return 0.0
+
+        ri = self.R_mat[i, common_qs]
+        rj = self.R_mat[j, common_qs]
+
+        # normalize ratings
+        # normalized_ri = ri - np.mean(ri)
+        # normalized_rj = rj - np.mean(rj)
+        normalized_ri = ri - self.umeans[i]
+        normalized_rj = rj - self.umeans[j]
+
+        normi = np.linalg.norm(normalized_ri)
+        normj = np.linalg.norm(normalized_rj)
+
+        if normi == 0.0 or normj == 0.0:
+            return 0.0
+        return np.dot(normalized_ri, normalized_rj) / (normi * normj)
+
     def neighborhood(self, ui, qi):
         """
         Returns the user neighborhood of a user (index ui) and question (index qi)
@@ -127,18 +159,29 @@ class CollabFilter(Solver):
         sim_total = 0
         neighbor_total = 0
         for uj in self.neighborhood(ui, qi):
-            sim = self.similarity(ui, uj)
+            #sim = self.similarity(ui, uj)
+            sim = self.pearson_corr(ui, uj)
             neighbor_total += sim * (self.R_mat[uj, qi] - self.umeans[uj])
             sim_total += abs(sim)
         if sim_total > 0.0:
             prediction += (neighbor_total / float(sim_total))
+            # Scale back to [0,1]
+            prediction = (prediction + 1) / 2
         if prediction > 1.0:
             print("Bigger than 1.0")
+            prediction = 1.0
         if prediction < 0.0:
             print("Smaller than 0.0")
+            prediction = 0.0
         return prediction
 
 if __name__ == '__main__':
     cfilter = CollabFilter()
     print("Solving...")
     cfilter.solve()
+
+# Next:
+#  - Use different correlations
+#  - Scale ratings to [-1, 1] then scale back linearly
+#  - Scale back to [0, 1] with sigmoid (maybe)
+#  - Use/don't use means
