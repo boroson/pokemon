@@ -401,3 +401,25 @@ def polynomial_expansion(vect):
 def all_nan(x):
     return not(False in np.isnan(x))
 
+
+def file_iter(filename, delimiter='\t'):
+    """
+    A generator over the rows in the file named filename.
+
+    This method allows you to easily iterate over the rows of a file without having to worry about using the `open`
+    or `csv.reader` functions.
+
+    Example:
+        for row in self.file_iter('myfile.csv', delimiter=','):
+            ...
+
+    param {string} filename - Name of  file to read. Files should be relative to path that script is run.
+    param {string} delimiter (Optional) - Delimiter of elements in file. Most files for ByteCup are tab delimited
+        (\t), so \t is the default delimiter.
+
+    return {iterator} Iterator over file
+    """
+    with open(filename, 'r') as f:
+        reader = csv.reader(f, delimiter=delimiter)
+        for row in reader:
+            yield(row)

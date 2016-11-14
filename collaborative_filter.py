@@ -1,6 +1,9 @@
+from __future__ import print_function
+
 from collections import defaultdict
 import numpy as np
 from scipy.stats import pearsonr
+import sys
 
 from core import Solver, DATADIR, TIMESTAMP, all_nan
 
@@ -13,7 +16,7 @@ class CollabFilter(Solver):
     """
     User-model based Collaborative filter
     """
-    def __init__(self):
+    def __init__(self, data=None):
         self.output = '%s_%s.csv' % (self.__class__.__name__, TIMESTAMP)
         # Dictionary assigning each user an index and each question an index - this is mainly for convenience
         self.q_index = self.create_index_map(filename=DATADIR + 'question_info.txt')
@@ -21,11 +24,13 @@ class CollabFilter(Solver):
 
         # Initialize rating matrix (rows = user indices, columns are question indices)
         self.R_mat = np.full(shape=(N_USERS, N_QUESTIONS), fill_value=np.NaN)
-        self.populate_rating_matrix()
+        self.total_ratings = 0
+        self.populate_rating_matrix(data)
 
         # Precompute user rating means
-        print("Computing means...")
+        print("Precomputing user rating means...")
         self.umeans = self.compute_means()
+        print("\tDone")
 
     def create_index_map(self, filename):
         """
@@ -45,11 +50,14 @@ class CollabFilter(Solver):
             index += 1
         return indices
 
-    def populate_rating_matrix(self):
+    def populate_rating_matrix(self, data):
         """
         Use the training data to populate the rating matrix
         """
-        for qid, uid, label in self.file_iter(DATADIR + 'invited_info_train.txt'):
+        if data is None:
+            data = self.file_iter(DATADIR + 'invited_info_train.txt')
+
+        for qid, uid, label in data:
             uindex = self.u_index[uid]
             qindex = self.q_index[qid]
             # Scale to [-1,1]
@@ -57,6 +65,7 @@ class CollabFilter(Solver):
                 self.R_mat[uindex, qindex] = -1.0
             else:
                 self.R_mat[uindex, qindex] = 1.0
+            self.total_ratings += 1
 
     def compute_means(self):
         """
@@ -168,12 +177,30 @@ class CollabFilter(Solver):
             # Scale back to [0,1]
             prediction = (prediction + 1) / 2
         if prediction > 1.0:
-            print("Bigger than 1.0")
             prediction = 1.0
-        if prediction < 0.0:
-            print("Smaller than 0.0")
+        elif prediction < 0.0:
             prediction = 0.0
         return prediction
+
+    def score(self, data):
+        print("Computing score...")
+        return self._mean_absolute_error(data)
+
+    def _mean_absolute_error(self, data):
+        """
+        Computes MAE of data
+        """
+        score = 0
+        iteration = 0
+        for qid, uid, rating in data:
+            prediction = self.predict(uid=uid, qid=qid)
+            score += abs(prediction - int(rating))
+            print("\r\tIteration %d" % iteration, end='')
+            sys.stdout.flush()
+            iteration += 1
+        print("\n\tDone")
+        return score / float(self.total_ratings)
+
 
 if __name__ == '__main__':
     cfilter = CollabFilter()
