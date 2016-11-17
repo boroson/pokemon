@@ -39,6 +39,13 @@ class KMeansCF(CollabFilter):
                 continue
             yield uj
 
+    def save_clusters(self):
+        with open('clusters.csv', 'w') as f:
+            for uid, ui in self.u_index.iteritems():
+                cluster = self.assignments[ui]
+                row = '%s,%d\n' % (uid, cluster)
+                f.write(row)
+
 
 def cross_validation():
     # Load training data
@@ -71,6 +78,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-k', help='Number of clusters (default: 8)', type=int, default=8)
     parser.add_argument('-cv', help='Perform cross validation', action='store_true')
+    parser.add_argument('--test', action='store_true', help='Solve against the test data rather than the validation data')
     return parser.parse_args()
 
 if __name__ == '__main__':
@@ -78,7 +86,9 @@ if __name__ == '__main__':
     if args.cv:
         cross_validation()
     else:
+        dataset = 'test_nolabel.txt' if args.test else 'validate_nolabel.txt'
         kmeans = KMeansCF(k=args.k)
         print("Solving...")
-        kmeans.solve()
+        #kmeans.save_clusters()
+        kmeans.solve(filename=DATADIR+dataset)
         print("\tDone")

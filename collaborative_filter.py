@@ -4,6 +4,7 @@ from collections import defaultdict
 import numpy as np
 from scipy.stats import pearsonr
 import sys
+import argparse
 
 from core import Solver, DATADIR, TIMESTAMP, all_nan
 
@@ -202,10 +203,18 @@ class CollabFilter(Solver):
         return score / float(self.total_ratings)
 
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--test', action='store_true', help='Solve against the test data rather than the validation data')
+    return parser.parse_args()
+
+
 if __name__ == '__main__':
+    args = parse_args()
+    dataset = 'test_nolabel.txt' if args.test else 'validate_nolabel.txt'
     cfilter = CollabFilter()
     print("Solving...")
-    cfilter.solve()
+    cfilter.solve(filename=DATADIR+dataset)
 
 # Next:
 #  - Use different correlations

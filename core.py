@@ -27,7 +27,7 @@ class Solver(object):
         self.tag_matrix = np.zeros([max_qtags + 1, max_utags + 1], dtype=int)
 
 
-    def file_iter(self, filename, delimiter='\t'):
+    def file_iter(self, filename, delimiter='\t', skip_header=False):
         """
         A generator over the rows in the file named filename.
 
@@ -46,6 +46,8 @@ class Solver(object):
         """
         with open(filename, 'r') as f:
             reader = csv.reader(f, delimiter=delimiter)
+            if skip_header:
+                reader.next()
             for row in reader:
                 yield(row)
 
@@ -365,7 +367,7 @@ class Solver(object):
         """
         with open(self.output, 'w') as outfile:
             outfile.write('qid,uid,label\n')
-            for row in self.validation_iter():
+            for row in self.file_iter(filename, delimiter=',', skip_header=True):
                 prediction = self.predict(qid=row[0], uid=row[1])
                 outfile.write('%s,%s,%s\n' % (row[0], row[1], prediction))
 
