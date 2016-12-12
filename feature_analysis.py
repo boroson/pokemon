@@ -7,8 +7,8 @@ np.set_printoptions(threshold=sys.maxint)
 FILEPATH_question = os.path.dirname(os.path.realpath(__file__)) + '/question_info.txt'
 FILEPATH_user = os.path.dirname(os.path.realpath(__file__)) + '/user_info.txt'
 FILEPATH_train = os.path.dirname(os.path.realpath(__file__)) + '/invited_info_train.txt'
-FILEPATH_test = os.path.dirname(os.path.realpath(__file__)) + '/validate_nolabel.txt'
-FILEPATH_finaltest = os.path.dirname(os.path.realpath(__file__)) + '/test_nolabel.txt'
+FILEPATH_test = os.path.dirname(os.path.realpath(__file__)) + '/validate_nolabel_nn.txt'
+FILEPATH_finaltest = os.path.dirname(os.path.realpath(__file__)) + '/test_nolabel_nn.txt'
 
 FILEPATH_userclusters = os.path.dirname(os.path.realpath(__file__)) + '/clusters.csv'
 FILEPATH_pseudoratings = os.path.dirname(os.path.realpath(__file__)) + '/pseudoratings.csv'
