@@ -3,10 +3,15 @@ import sys
 import numpy as np
 np.set_printoptions(threshold=sys.maxint)
 
-FILEPATH_question = os.path.dirname(os.path.realpath(__file__)) + '/question_info.txt'
-FILEPATH_user = os.path.dirname(os.path.realpath(__file__)) + '/user_info.txt'
-FILEPATH_train = os.path.dirname(os.path.realpath(__file__)) + '/invited_info_train.txt'
-FILEPATH_val = os.path.dirname(os.path.realpath(__file__)) + '/validate_nolabel.txt'
+# FILEPATH_question = os.path.dirname(os.path.realpath(__file__)) + '/question_info.txt'
+# FILEPATH_user = os.path.dirname(os.path.realpath(__file__)) + '/user_info.txt'
+# FILEPATH_train = os.path.dirname(os.path.realpath(__file__)) + '/invited_info_train.txt'
+# FILEPATH_val = os.path.dirname(os.path.realpath(__file__)) + '/validate_nolabel.txt'
+
+FILEPATH_question = 'bytecup2016data/question_info.txt'
+FILEPATH_user = 'bytecup2016data/user_info.txt'
+FILEPATH_train = 'bytecup2016data/invited_info_train.txt'
+FILEPATH_val = 'bytecup2016data/validate_nolabel.txt'
 
 #NUM_question = 8095
 #NUM_user = 28763
@@ -192,32 +197,34 @@ max_utag = max([tag for sublist in utags for tag in sublist]) #Max value out of 
 max_qtag = max(qtags) #Max value out of all question tags
 del (tag, sublist)
 
+print max_qtag, max_utag
+
 ### Already checked that all tags exist ###
 #if set(xrange(max_utag+1))==set(([tag for sublist in utags for tag in sublist])): print 'All user tags exist'
 #if set(xrange(max_qtag+1))==set(qtags): print 'All question tags exist'
 
 # Construct tag matrix and print its diagonal
-#tagmat = tag_matrix(qids,uids,qtags,utags,max_qtag,max_utag)
-#for i in xrange(max_qtag+1):
-#    print tagmat[i,i]
-#del i
+tagmat = tag_matrix(qids,uids,qtags,utags,max_qtag,max_utag)
+for i in xrange(max_qtag+1):
+   print tagmat[i,i]
+del i
     
-# Find fractions of words and characters in common
-(y_frac_words_in_common, n_frac_words_in_common, y_frac_chars_in_common,
-    n_frac_chars_in_common) = words_chars_in_common(qids,uids,qwords,uwords,qchars,uchars)
-
-# Find question popularity metrics
-#Keys
-upvote_keys = [range(11),range(11,20,2),range(21,51,5),range(51,101,10),range(101,201,25),
-    range(201,501,50),range(501,1001,100),range(1001,2001,500),range(2001,5001,1000),[5001,10001,max(qupvotes)+1]]
-ans_keys = [range(21),range(21,30,5),range(31,50,10),range(51,100,25),range(101,300,100),[301,max(qans)+1]]
-tqans_keys = [range(11),range(11,20,2),range(21,30,5),range(31,50,10),[51,101,max(qtqans)+1]]
-ansratio_keys = [[0],range(1,90,10),[100,101]]
-#Actual computation
-y_perc_upvotes, n_perc_upvotes = question_pop(qids,qupvotes,upvote_keys)
-y_perc_ans, n_perc_ans = question_pop(qids,qans,ans_keys)
-y_perc_tqans, n_perc_tqans = question_pop(qids,qtqans,tqans_keys)
-y_perc_ansratio, n_perc_ansratio = question_pop(qids,qans_percratio,ansratio_keys)              
+# # Find fractions of words and characters in common
+# (y_frac_words_in_common, n_frac_words_in_common, y_frac_chars_in_common,
+#     n_frac_chars_in_common) = words_chars_in_common(qids,uids,qwords,uwords,qchars,uchars)
+#
+# # Find question popularity metrics
+# #Keys
+# upvote_keys = [range(11),range(11,20,2),range(21,51,5),range(51,101,10),range(101,201,25),
+#     range(201,501,50),range(501,1001,100),range(1001,2001,500),range(2001,5001,1000),[5001,10001,max(qupvotes)+1]]
+# ans_keys = [range(21),range(21,30,5),range(31,50,10),range(51,100,25),range(101,300,100),[301,max(qans)+1]]
+# tqans_keys = [range(11),range(11,20,2),range(21,30,5),range(31,50,10),[51,101,max(qtqans)+1]]
+# ansratio_keys = [[0],range(1,90,10),[100,101]]
+# #Actual computation
+# y_perc_upvotes, n_perc_upvotes = question_pop(qids,qupvotes,upvote_keys)
+# y_perc_ans, n_perc_ans = question_pop(qids,qans,ans_keys)
+# y_perc_tqans, n_perc_tqans = question_pop(qids,qtqans,tqans_keys)
+# y_perc_ansratio, n_perc_ansratio = question_pop(qids,qans_percratio,ansratio_keys)
                 
                 
                 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from sklearn.cluster import KMeans as _KMeans
-from sklearn.model_selection import KFold
+# from sklearn.model_selection import KFold
 import argparse
 import numpy as np
 
@@ -50,28 +50,28 @@ class KMeansCF(CollabFilter):
 def cross_validation():
     # Load training data
     X = np.array([row for row in file_iter(DATADIR + 'invited_info_train.txt')])
-    # Test k values from 2 to 11
-    k_values = range(2, 11)
-    # Create K-fold cross validation iterator
-    folds = 15
-    kf = KFold(n_splits=folds)
-
-    score = {}
-    for k in k_values:
-        print("\nTesting k = %d..." % k)
-        print("-------------------")
-        score[k] = 0
-        for train_index, test_index in kf.split(X):
-            # Split data into training and test set
-            training, test = X[train_index], X[test_index]
-            classifier = KMeansCF(k=k, data=training)
-            score[k] += classifier.score(test)
-        score[k] /= float(folds)
-    for k, mae in score.iteritems():
-        print("K = %d | MAE = %f" % (k, mae))
-    best_k = min(score, key=lambda x: score[x])
-    print("\nBest K = %d" % best_k)
-    return best_k
+    # # Test k values from 2 to 11
+    # k_values = range(2, 11)
+    # # Create K-fold cross validation iterator
+    # folds = 15
+    # kf = KFold(n_splits=folds)
+    #
+    # score = {}
+    # for k in k_values:
+    #     print("\nTesting k = %d..." % k)
+    #     print("-------------------")
+    #     score[k] = 0
+    #     for train_index, test_index in kf.split(X):
+    #         # Split data into training and test set
+    #         training, test = X[train_index], X[test_index]
+    #         classifier = KMeansCF(k=k, data=training)
+    #         score[k] += classifier.score(test)
+    #     score[k] /= float(folds)
+    # for k, mae in score.iteritems():
+    #     print("K = %d | MAE = %f" % (k, mae))
+    # best_k = min(score, key=lambda x: score[x])
+    # print("\nBest K = %d" % best_k)
+    # return best_k
 
 
 def parse_args():

@@ -13,15 +13,17 @@ N_QUESTIONS = 8095
 N_USERS = 28763
 
 
+
 class CollabFilter(Solver):
     """
     User-model based Collaborative filter
     """
     def __init__(self, data=None):
+        super(CollabFilter, self).__init__()
         self.output = '%s_%s.csv' % (self.__class__.__name__, TIMESTAMP)
         # Dictionary assigning each user an index and each question an index - this is mainly for convenience
-        self.q_index = self.create_index_map(filename=DATADIR + 'question_info.txt')
-        self.u_index = self.create_index_map(filename=DATADIR + 'user_info.txt')
+        self.q_index, self.q_ids = self.create_index_map(filename=DATADIR + 'question_info.txt')
+        self.u_index, self.u_ids = self.create_index_map(filename=DATADIR + 'user_info.txt')
 
         # Initialize rating matrix (rows = user indices, columns are question indices)
         self.R_mat = np.full(shape=(N_USERS, N_QUESTIONS), fill_value=np.NaN)
@@ -37,6 +39,8 @@ class CollabFilter(Solver):
         """
         Create a dictionary mapping question or user ID's to integer indexes
 
+        Also mapping the other way
+
         Ex:
             {
                 'asd24kfe0204...': 0,
@@ -44,12 +48,14 @@ class CollabFilter(Solver):
             }
         """
         indices = {}
+        ids = []
         index = 0
         for row in self.file_iter(filename):
             uuid = row[0]
             indices[uuid] = index
+            ids.append(uuid)
             index += 1
-        return indices
+        return indices, ids
 
     def populate_rating_matrix(self, data):
         """

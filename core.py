@@ -340,7 +340,8 @@ class Solver(object):
             y.append(int(row[2]))
         return np.array(x), np.array(y)
 
-    def validation_iter(self, filename=DATADIR+'validate_nolabel.txt'):
+    # def validation_iter(self, filename=DATADIR+'invited_info_train.txt'):
+    def validation_iter(self, filename=DATADIR + 'validate_nolabel.txt'):
         for row in self.file_iter(filename, delimiter=','):
             # Skip header
             if 'qid' in row:
